@@ -420,6 +420,14 @@ function BetterVehicleFirstPerson:New()
                     SetFOV() -- Weapon holstered: set FOV back to vehicle preset (also applies when choosing not to maintain FOV with weapon use)
                 end
             end
+
+            if isInVehicle then
+                if isWeaponDrawnNext and not wasWeaponDrawn then
+                    Game.GetPlayer():GetFPPCameraComponent():SetLocalPosition(Vector4.new(0, -(0.02 * Config.data.zMult), (0.09 * Config.data.yMult), 1.0))
+                elseif not isWeaponDrawnNext and wasWeaponDrawn then
+                    Game.GetPlayer():GetFPPCameraComponent():SetLocalPosition(Vector4.new((0.02 * Config.data.xMult), -(0.02 * Config.data.zMult), (0.09 * Config.data.yMult), 1.0))
+                end
+            end
             
             isInVehicle = isInVehicleNext
             wasWeaponDrawn = isWeaponDrawn -- Track last weapon state explicitly
