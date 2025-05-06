@@ -424,7 +424,7 @@ function BetterVehicleFirstPerson:New()
             isInVehicle = isInVehicleNext
             wasWeaponDrawn = isWeaponDrawn -- Track last weapon state explicitly
             isWeaponDrawn = isWeaponDrawnNext
-        end)
+        end, {})
 
         Observe('hudCarController', 'RegisterToVehicle', function(_, registered)
             if not registered then
