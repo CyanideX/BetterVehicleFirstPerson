@@ -694,25 +694,21 @@ function BetterVehicleFirstPerson:New()
 
             -- Save global preset
             if not globalVehiclePreset then
-                ImGui.Text("")
                 ImGui.Text(" The global preset ")
                 ImGui.Text(" hasn't been established yet. ")
-                ImGui.Text("")
+
                 if ImGui.Button(("Save as new global preset"), ImGui.GetContentRegionAvail(), 0) then
                     SetGlobalPreset()
                 end
 
-                ImGui.Text("")
                 ImGui.Separator()
             else
                 if not IsSamePreset(globalVehiclePreset) then
                     local function CurSetupIsDiffMsg()
-                        ImGui.Text("")
                         ImGui.Text(" Current setup is different from the global preset. ")
                     end
                     if curVehiclePreset then
                         if IsSamePreset(curVehiclePreset) then
-                            ImGui.Text("")
                             ImGui.Text(" Vehicle preset overrides the global preset. ")
                         else
                             CurSetupIsDiffMsg()
@@ -748,44 +744,74 @@ function BetterVehicleFirstPerson:New()
                     end
 
                 end
-
-                ImGui.Text("")
                 ImGui.Separator()
             end
-            ImGui.Text("")
-
             -- Presets manager
             if curVehicle then
-                local carName = GetVehicleMan(curVehicle) .. " " .. GetVehicleModel(curVehicle)
-
-                -- "You're driving %CarName%" message
-                ImGui.Text(" You're driving ")
-                ImGui.SameLine()
-                ImGui.PushStyleColor(ImGuiCol.Text, 1.0, 0.86, 0.47, 1.0)
-                ImGui.Text(("%q "):format(carName))
-                ImGui.PopStyleColor(1)
-
-                -- Save preset for a vehicle
-                if curVehiclePreset then
-                    if not IsSamePreset(curVehiclePreset) then
-                        if ImGui.Button((" Save %q preset "):format(carName)) then
-                            AddVehiclePreset()
-                        end
+                local item = curVehicle and curVehicle:GetRecordID().value -- Ensure `item` is defined
+                local carName = GetVehicleMan(curVehicle) .. " " .. GetVehicleModel(curVehicle) -- Fallback name
+                if item then
+                    local displayName = TweakDB:GetFlat(item .. '.displayName')
+                    if displayName then
+                        local lockey = Game.GetLocalizedText(displayName)
+                        local withoutPrefix = string.gsub(lockey, "LocKey%(", "")
+                        local displayNums = string.match(withoutPrefix, "(%d+)")
+                        local nameStr = 'LocKey#' .. tostring(displayNums)
+                        ImGui.Text("Currently driving: ")
+                        ImGui.SameLine()
+                        ImGui.PushStyleColor(ImGuiCol.Text, 1.0, 0.86, 0.47, 1.0)
+                        ImGui.Text(Game.GetLocalizedText(nameStr))
+                        ImGui.PopStyleColor(1)
                     else
-                        ImGui.Text(" The vehicle preset has been loaded ")
+                        ImGui.Text("Currently driving: ")
+                        ImGui.SameLine()
+                        ImGui.PushStyleColor(ImGuiCol.Text, 1.0, 0.86, 0.47, 1.0)
+                        ImGui.Text(carName) -- Fallback to carName
+                        ImGui.PopStyleColor(1)
                     end
                 else
-                    if ImGui.Button((" Save as new %q preset "):format(carName)) then
-                        AddVehiclePreset()
+                    ImGui.Text("No vehicle selected.")
+                end
+
+                -- Save preset for a vehicle
+                if item then
+                    local displayName = TweakDB:GetFlat(item .. '.displayName')
+                    if curVehiclePreset then
+                        local lockey = Game.GetLocalizedText(displayName)
+                        local withoutPrefix = string.gsub(lockey, "LocKey%(", "")
+                        local displayNums = string.match(withoutPrefix, "(%d+)")
+                        local nameStr = 'LocKey#' .. tostring(displayNums)
+                        if not IsSamePreset(curVehiclePreset) then
+                            if ImGui.Button("Update '" .. Game.GetLocalizedText(nameStr) .. "' preset") then
+                                AddVehiclePreset()
+                            end
+                        else
+                            ImGui.BeginDisabled()
+                            if ImGui.Button(("Current vehicle preset has been loaded"), ImGui.GetContentRegionAvail(), 0) then
+                            end
+                            ImGui.EndDisabled()
+                        end
+                    else
+                        local lockey = Game.GetLocalizedText(displayName)
+                        local withoutPrefix = string.gsub(lockey, "LocKey%(", "")
+                        local displayNums = string.match(withoutPrefix, "(%d+)")
+                        local nameStr = 'LocKey#' .. tostring(displayNums)
+                        if ImGui.Button("Save new '" .. Game.GetLocalizedText(nameStr) .. "' preset", ImGui.GetContentRegionAvail(), 0) then
+                            AddVehiclePreset()
+                        end
                     end
+                else
+                    ImGui.Text("No vehicle selected.")
                 end
 
                 -- Reset preset
                 if curVehiclePreset and not IsSamePreset(curVehiclePreset) then
-                    if ImGui.Button((" Load %s preset "):format(carName)) then
+                    ImGui.SameLine()
+                    if ImGui.Button(IconGlyphs.Restore, ImGui.GetContentRegionAvail(), 0) then
                         ApplyPreset(curVehiclePreset)
                         RefreshCameraIfNeeded()
                     end
+                    ui.tooltip("Reset to the current vehicle preset.", true)
                 end
 
                 ImGui.Dummy(0, 4)
