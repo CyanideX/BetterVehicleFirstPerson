@@ -852,63 +852,110 @@ function BetterVehicleFirstPerson:New()
                 local childPadding = 20 -- Define padding for left and right
                 ImGui.Dummy(0, 10) -- Add vertical padding at the top
                 -- Preset list
+                local tweakDBVehicles = {}
+                local missingVehicles = {}
+
                 for i, pr in pairs(Config.data.perCarPresets) do
                     if pr.man ~= "global" then
-                        local isSamePreset = IsSamePreset(pr.preset)
-
-                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + childPadding)
-
-                        -- Load Preset Button
-                        ImGui.PushID(tostring(i))
-                        if isSamePreset then
-                            ImGui.BeginDisabled(true)
-                            ImGui.Button(IconGlyphs.CheckBold, 120, 0) -- Show checkmark for loaded preset
-                            ImGui.EndDisabled()
-                        else
-                            if ImGui.Button("Load", 120, 0) then -- Show upload glyph for other presets
-                                ApplyPreset(pr.preset)
-                                RefreshCameraIfNeeded()
-                            end
-                        end
-                        ImGui.PopID()
-                        ImGui.SameLine()
-
-                        -- Delete Preset Button
-                        ImGui.PushID("del" .. tostring(i))
-                        ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(1, 0.3, 0.3, 1))
-                        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGui.GetColorU32(1, 0.45, 0.45, 1))
-                        ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGui.GetColorU32(1, 0.45, 0.45, 1))
-                        ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(0, 0, 0, 1))
-                        if ImGui.Button(IconGlyphs.TrashCanOutline, 0, 0) then -- Make button square
-                            DeletePreset((pr.man .. pr.model))
-                        end
-                        ImGui.PopStyleColor(4)
-                        ImGui.PopID()
-                        ImGui.SameLine()
-
-                        -- Preset Name
-                        if isSamePreset then
-                            ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(0.0, 0.8, 0.5, 1))
-                        end
                         local recordID = pr.man
-                        if recordID then
-                            local displayName = TweakDB:GetFlat(recordID .. ".displayName")
-                            local lockey = Game.GetLocalizedText(displayName)
-                            local withoutPrefix = string.gsub(lockey, "LocKey%(", "")
-                            local displayNums = string.match(withoutPrefix, "(%d+)")
-                            local nameStr = 'LocKey#' .. tostring(displayNums)
-                            if displayName then
-                                ImGui.Text(Game.GetLocalizedText(nameStr))
-                            else
-                                ImGui.Text(pr.man .. " " .. pr.model) -- Fallback if no display name is found
-                            end
+                        local displayName = recordID and TweakDB:GetFlat(recordID .. ".displayName")
+                        if displayName then
+                            table.insert(tweakDBVehicles, pr)
+                        elseif pr.man:find("[._]") then
+                            table.insert(missingVehicles, pr)
                         else
-                            ImGui.Text(pr.man .. " " .. pr.model) -- Fallback if no record ID is found
-                        end
-                        if isSamePreset then
-                            ImGui.PopStyleColor()
+                            table.insert(tweakDBVehicles, pr) -- Vanilla vehicles without TweakDB names
                         end
                     end
+                end
+
+                -- Display vehicles with TweakDB names
+                for _, pr in ipairs(tweakDBVehicles) do
+                    local isSamePreset = IsSamePreset(pr.preset)
+
+                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + childPadding)
+
+                    -- Load Preset Button
+                    ImGui.PushID(tostring(i))
+                    if isSamePreset then
+                        ImGui.BeginDisabled(true)
+                        ImGui.Button(IconGlyphs.CheckBold, 120, 0) -- Show checkmark for loaded preset
+                        ImGui.EndDisabled()
+                    else
+                        if ImGui.Button("Load", 120, 0) then -- Show upload glyph for other presets
+                            ApplyPreset(pr.preset)
+                            RefreshCameraIfNeeded()
+                        end
+                    end
+                    ImGui.PopID()
+                    ImGui.SameLine()
+
+                    -- Delete Preset Button
+                    ImGui.PushID("del" .. tostring(i))
+                    ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(1, 0.3, 0.3, 1))
+                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGui.GetColorU32(1, 0.45, 0.45, 1))
+                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGui.GetColorU32(1, 0.45, 0.45, 1))
+                    ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(0, 0, 0, 1))
+                    if ImGui.Button(IconGlyphs.TrashCanOutline, 0, 0) then -- Make button square
+                        DeletePreset((pr.man .. pr.model))
+                    end
+                    ImGui.PopStyleColor(4)
+                    ImGui.PopID()
+                    ImGui.SameLine()
+
+                    -- Preset Name
+                    if isSamePreset then
+                        ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(0.0, 0.8, 0.5, 1))
+                    end
+                    local recordID = pr.man
+                    if recordID then
+                        local displayName = TweakDB:GetFlat(recordID .. ".displayName")
+                        local lockey = Game.GetLocalizedText(displayName)
+                        local withoutPrefix = string.gsub(lockey, "LocKey%(", "")
+                        local displayNums = string.match(withoutPrefix, "(%d+)")
+                        local nameStr = 'LocKey#' .. tostring(displayNums)
+                        if displayName then
+                            ImGui.Text(Game.GetLocalizedText(nameStr))
+                        else
+                            ImGui.Text(pr.man .. " " .. pr.model) -- Fallback if no display name is found
+                        end
+                    else
+                        ImGui.Text(pr.man .. " " .. pr.model) -- Fallback if no record ID is found
+                    end
+                    if isSamePreset then
+                        ImGui.PopStyleColor()
+                    end
+                end
+                -- Display vehicles without TweakDB names
+                for _, pr in ipairs(missingVehicles) do
+                    ImGui.SetCursorPosX(ImGui.GetCursorPosX() + childPadding)
+
+                    -- Load Preset Button
+                    ImGui.PushID("load_missing_" .. tostring(pr.man))
+                    if ImGui.Button("Load", 120, 0) then
+                        ApplyPreset(pr.preset)
+                        RefreshCameraIfNeeded()
+                    end
+                    ImGui.PopID()
+                    ImGui.SameLine()
+
+                    -- Delete Preset Button
+                    ImGui.PushID("del_missing_" .. tostring(pr.man))
+                    ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(1, 0.3, 0.3, 1))
+                    ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGui.GetColorU32(1, 0.45, 0.45, 1))
+                    ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGui.GetColorU32(1, 0.45, 0.45, 1))
+                    ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(0, 0, 0, 1))
+                    if ImGui.Button(IconGlyphs.TrashCanOutline, 0, 0) then
+                        DeletePreset((pr.man .. pr.model))
+                    end
+                    ImGui.PopStyleColor(4)
+                    ImGui.PopID()
+                    ImGui.SameLine()
+
+                    -- Preset Name
+                    ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(0.5, 0.5, 0.5, 1)) -- Grey text
+                    ImGui.Text(pr.man .. " " .. pr.model) -- Fallback if no display name is found
+                    ImGui.PopStyleColor()
                 end
                 ImGui.Dummy(0, 10) -- Add vertical padding at the bottom
                 ImGui.EndChild()
