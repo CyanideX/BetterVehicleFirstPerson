@@ -554,7 +554,7 @@ function BetterVehicleFirstPerson:New()
         -- Set window size constraints
         if enabled and isInVehicle then
             guiFlags = ImGuiWindowFlags.AlwaysUseWindowPadding
-            ImGui.SetNextWindowSizeConstraints(screenWidth * 0.15, screenWidth * 0.165, screenWidth / 100 * 50, screenHeight / 100 * 90)
+            ImGui.SetNextWindowSizeConstraints(screenWidth * 0.15, screenHeight * 0.305, screenWidth / 100 * 50, screenHeight / 100 * 90)
         else
             guiFlags = ImGuiWindowFlags.NoScrollbar + ImGuiWindowFlags.AlwaysAutoResize + ImGuiWindowFlags.AlwaysUseWindowPadding
             ImGui.SetNextWindowSizeConstraints(0, 0, screenWidth / 100 * 50, screenHeight / 100 * 90)
@@ -591,26 +591,24 @@ function BetterVehicleFirstPerson:New()
             RefreshWeaponFOVIfNeeded()
         end
 
+        ImGui.Dummy(0, 4)
+        
         if enabled and isInVehicle then
 			local globalVehiclePreset = GetGlobalPreset()
             local curVehiclePreset = GetVehiclePreset(GetMountedVehicleRecord())
             if not curVehiclePreset or not IsSamePreset(curVehiclePreset) then
-                --ImGui.PushStyleColor(ImGuiCol.Text, 0.60, 0.40, 0.20, 1.0)
-                ImGui.PushStyleColor(ImGuiCol.Text, 1.0, 0.53, 0.14, 1.0)
-
-				if not globalVehiclePreset then
-					ImGui.Text(" THESE VALUES HAVEN'T YET BEEN SAVED ")
-				else
-					if not IsSamePreset(globalVehiclePreset) then
-						ImGui.Text(" THESE VALUES HAVEN'T YET BEEN SAVED ")
-					else
-						ImGui.Text("")
-					end
-				end
-
-                ImGui.PopStyleColor(1)
+                ImGui.PushStyleColor(ImGuiCol.Text, 0, 0, 0, 1.0)
+                ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(1, 0.75, 0.09, 1)) -- Set button color
+                ImGui.PushStyleColor(ImGuiCol.ButtonHovered, ImGui.GetColorU32(1, 0.75, 0.09, 1)) -- Set hover color same as button
+                ImGui.PushStyleColor(ImGuiCol.ButtonActive, ImGui.GetColorU32(1, 0.75, 0.09, 1)) -- Set active color same as button
+                ImGui.Button("CURRENT VALUES HAVE NOT BEEN SAVED", ImGui.GetContentRegionAvail(), 0)
+                ImGui.PopStyleColor(4)
             else
-                ImGui.Text("")
+                ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(0.65, 0.7, 1, 0.045))
+                ImGui.BeginDisabled(true) -- Disable button functionality
+                ImGui.Button("SYSTEMS: NOMINAL", ImGui.GetContentRegionAvail(), 0)
+                ImGui.EndDisabled()
+                ImGui.PopStyleColor(1)
             end
 
             ImGui.Dummy(0, 4)
@@ -720,15 +718,17 @@ function BetterVehicleFirstPerson:New()
                 ImGui.Text("No global preset currently saved.")
                 ImGui.PopStyleColor(1)
 
-                if ImGui.Button(("Save as new global preset"), ImGui.GetContentRegionAvail(), 0) then
+                if ImGui.Button("Save as new global preset", ImGui.GetContentRegionAvail(), 0) then
                     SetGlobalPreset()
                 end
 
                 ImGui.Separator()
             else
+                ImGui.Dummy(0, 4)
                 if not IsSamePreset(globalVehiclePreset) then
+                    local buttonWidth = ImGui.GetContentRegionAvail()
                     local function CurSetupIsDiffMsg()
-                        ImGui.Text(" Current setup is different from the global preset. ")
+                    -- ImGui.Text(" Current setup is different from the global preset. ")
                     end
                     if curVehiclePreset then
                         if IsSamePreset(curVehiclePreset) then
@@ -740,33 +740,38 @@ function BetterVehicleFirstPerson:New()
                         CurSetupIsDiffMsg()
                     end
 
+
                     -- Save global preset
-                    if ImGui.Button(("Save global preset")) then
+                    if ImGui.Button("Update global preset", buttonWidth / 2 - ImGui.GetStyle().ItemSpacing.x / 2, 0) then
                         SetGlobalPreset()
                     end
-
                     -- Reset global preset
-                    if ImGui.Button(("Load global preset")) then
+                    ImGui.SameLine()
+                    if ImGui.Button("Load global preset", buttonWidth / 2 - ImGui.GetStyle().ItemSpacing.x / 2, 0) then
                         ApplyPreset(globalVehiclePreset)
                         RefreshCameraIfNeeded()
                     end
                 else
                     local function globPresetHasBeenLoadedMsg()
-                        ImGui.Text("")
-                        ImGui.Text(" The global preset has been loaded! ")
+                        ImGui.BeginDisabled()
+                        if ImGui.Button(("Global preset is currently loaded"), ImGui.GetContentRegionAvail(), 0) then
+                        end
+                        ImGui.EndDisabled()
                     end
                     if curVehiclePreset then
                         if IsSamePreset(curVehiclePreset) then
-                            ImGui.Text("")
-                            ImGui.Text(" The global and vehicle presets are the same")
+                            ImGui.BeginDisabled()
+                            if ImGui.Button(("Global and vehicle preset are the same"), ImGui.GetContentRegionAvail(), 0) then
+                            end
+                            ImGui.EndDisabled()
                         else
                             globPresetHasBeenLoadedMsg()
                         end
                     else
                         globPresetHasBeenLoadedMsg()
                     end
-
                 end
+                ImGui.Dummy(0, 4)
                 ImGui.Separator()
             end
             -- Presets manager
