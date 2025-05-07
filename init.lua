@@ -262,6 +262,10 @@ function GetGlobalPreset()
     local gPreset = Config.data.perCarPresets[gKey]
 
     if gPreset then
+        -- Ensure xMult is present in the global preset
+        if not gPreset.preset[6] then
+            gPreset.preset[6] = 0 -- Default to 0 if missing
+        end
         return gPreset.preset
     end
 
@@ -278,13 +282,10 @@ function GetVehiclePreset(vehicle)
     local vehKey = (vehMan .. vehModel)
     local vehPreset = Config.data.perCarPresets[vehKey]
     if vehPreset then
-        --catch error?
-        --if vehPreset.preset[5] == nil then
-        --	vehPreset.preset[5] = initialSensitivity
-        --end
-        --
-        --^ is obsolete, I added iteration through all car presets
-        --in Config.lua - Migrate() function
+        -- Ensure xMult is present in the preset
+        if not vehPreset.preset[6] then
+            vehPreset.preset[6] = 0 -- Default to 0 if missing
+        end
         return vehPreset.preset
     end
 
@@ -414,7 +415,7 @@ function ApplyPreset(pr)
     Config.data.zMult = pr[3]
     Config.data.fov = pr[4]
     Config.data.sensitivity = pr[5]
-    Config.data.xMult = pr[6]
+    Config.data.xMult = pr[6] or 0 -- Default to 0 if missing
 end
 
 
@@ -424,6 +425,10 @@ function BetterVehicleFirstPerson:New()
         Config.InitConfig()
 
         Cron.Every(0.2, function()
+
+            --Disabled during GUI dev
+
+
 --[[             if not enabled then
               return
             end
@@ -533,28 +538,23 @@ function BetterVehicleFirstPerson:New()
     end)
 
     registerForEvent("onDraw", function()
+
         if not isOverlayOpen or not Config or not Config.isReady then
             return
         end
 
+        ImGui.PushStyleVar(ImGuiStyleVar.ScrollbarSize, 3)
+        ImGui.PushStyleColor(ImGuiCol.ScrollbarBg, ImGui.GetColorU32(0, 0, 0, 0))
+        ImGui.PushStyleColor(ImGuiCol.ScrollbarGrab, ImGui.GetColorU32(0.8, 0.8, 1, 0.4))
+
         local screenWidth, screenHeight = GetDisplayResolution()
 
-            -- Set window size constraints
-    ImGui.SetNextWindowSizeConstraints(uiMinWidth, uiMinHeight, screenWidth / 100 * 50, screenHeight / 100 * 90)
+        -- Set window size constraints
+        ImGui.SetNextWindowSizeConstraints(screenWidth * 0.15, screenWidth * 0.15, screenWidth / 100 * 50, screenHeight / 100 * 90)
 
-    -- Set initial window position and size
-    ImGui.SetNextWindowPos(200, 200, ImGuiCond.FirstUseEver)
-    ImGui.SetNextWindowSize(250, 260, ImGuiCond.FirstUseEver)
-
---[[         ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, 300, 40)
-        ImGui.PushStyleColor(ImGuiCol.Border, 0, 0, 0, 0)
-        ImGui.PushStyleColor(ImGuiCol.TitleBg, 0, 0, 0, 0.8)
-        ImGui.PushStyleColor(ImGuiCol.TitleBgActive, 0, 0, 0, 0.8)
-        ImGui.PushStyleColor(ImGuiCol.WindowBg, 0, 0, 0, 0.8)
-        ImGui.PushStyleColor(ImGuiCol.Button, 0.25, 0.35, 0.45, 0.8)
-        ImGui.PushStyleColor(ImGuiCol.ButtonHovered, 0.35, 0.45, 0.55, 1.0)
-        ImGui.PushStyleColor(ImGuiCol.ButtonActive, 0.25, 0.35, 0.45, 0.5)
-        ImGui.PushStyleColor(ImGuiCol.FrameBg, 0.25, 0.35, 0.45, 0.8) ]]
+        -- Set initial window position and size
+        ImGui.SetNextWindowPos(200, 200, ImGuiCond.FirstUseEver)
+        ImGui.SetNextWindowSize(250, 260, ImGuiCond.FirstUseEver)
 
         ImGui.Begin("Better Vehicle First Person")
         ImGui.SetWindowFontScale(1)
@@ -569,8 +569,6 @@ function BetterVehicleFirstPerson:New()
             RefreshWeaponFOVIfNeeded()
         end
 
-        ImGui.Dummy(0, 4)
-
         if enabled and isInVehicle then
 			local globalVehiclePreset = GetGlobalPreset()
             local curVehiclePreset = GetVehiclePreset(GetMountedVehicleRecord())
@@ -584,17 +582,17 @@ function BetterVehicleFirstPerson:New()
 					if not IsSamePreset(globalVehiclePreset) then
 						ImGui.Text(" THESE VALUES HAVEN'T YET BEEN SAVED ")
 					else
-						ImGui.Text(" SYSTEMS NOMINAL ")
+						ImGui.Text("")
 					end
 				end
 
                 ImGui.PopStyleColor(1)
             else
-                ImGui.Text(" SYSTEMS NOMINAL ")
+                ImGui.Text("")
             end
 
             ImGui.Dummy(0, 4)
-            ImGui.Text("Controls")
+            ImGui.Text("Adjustments")
             ImGui.Separator()
 
             -- Tilt control
@@ -648,7 +646,7 @@ function BetterVehicleFirstPerson:New()
             end
 
 			-- Sensitivity control
-            InvisibleButton(IconGlyphs.Steering, false)
+			InvisibleButton(IconGlyphs.Steering, false)
             ui.tooltip("Set the steering sensitivity.", true)
             ImGui.SameLine()
             ImGui.SetNextItemWidth(ImGui.GetWindowContentRegionWidth() - ImGui.GetCursorPosX())
@@ -657,38 +655,37 @@ function BetterVehicleFirstPerson:New()
                 RefreshCameraIfNeeded()
 			end
 
-            -- Predefined presets
             ImGui.Dummy(0, 4)
             ImGui.Text("Presets ")
             ImGui.Separator()
+
             local presetButtonCount = 5
             local padding = 18 -- Add padding to the left and right of buttons
             local presetButtonWidth = (ImGui.GetWindowContentRegionWidth() - (presetButtonCount - 1) * ImGui.GetStyle().ItemSpacing.x - 2 * padding) / presetButtonCount
 
+            ImGui.Dummy(0, 4)
             ImGui.SetCursorPosX(ImGui.GetCursorPosX() + padding) -- Add left padding
-            if ImGui.Button(" 1 ", presetButtonWidth , 0) then
-                ApplyPreset(presets[1])
-                RefreshCameraIfNeeded()
-            end
-            ImGui.SameLine()
-            if ImGui.Button(" 2 ", presetButtonWidth, 0) then
-                ApplyPreset(presets[2])
-                RefreshCameraIfNeeded()
-            end
-            ImGui.SameLine()
-            if ImGui.Button(" 3 ", presetButtonWidth, 0) then
-                ApplyPreset(presets[3])
-                RefreshCameraIfNeeded()
-            end
-            ImGui.SameLine()
-            if ImGui.Button(" 4 ", presetButtonWidth, 0) then
-                ApplyPreset(presets[4])
-                RefreshCameraIfNeeded()
-            end
-            ImGui.SameLine()
-            if ImGui.Button(" 5 ", presetButtonWidth, 0) then
-                ApplyPreset(presets[5])
-                RefreshCameraIfNeeded()
+
+            -- Predefined presets
+            for i = 1, #presets do
+                if ImGui.Button(tostring(i), presetButtonWidth, 0) then
+                    ApplyPreset(presets[i])
+                    RefreshCameraIfNeeded()
+                end
+                if ImGui.IsItemHovered() then
+                    local pr = presets[i]
+                    ImGui.BeginTooltip()
+                    ImGui.Text(("Tilt Mult: %.2f"):format(pr[1]))
+                    ImGui.Text(("Y Mult: %.2f"):format(pr[2]))
+                    ImGui.Text(("Z Mult: %.2f"):format(pr[3]))
+                    ImGui.Text(("FOV: %.2f"):format(pr[4]))
+                    ImGui.Text(("Sensitivity: %.2f"):format(pr[5]))
+                    ImGui.Text(("X Mult: %.2f"):format(pr[6] or 0)) -- Default to 0 if missing
+                    ImGui.EndTooltip()
+                end
+                if i < #presets then
+                    ImGui.SameLine()
+                end
             end
 
             ImGui.Dummy(0, 4)
@@ -701,7 +698,7 @@ function BetterVehicleFirstPerson:New()
                 ImGui.Text(" The global preset ")
                 ImGui.Text(" hasn't been established yet. ")
                 ImGui.Text("")
-                if ImGui.Button((" Save as new global preset ")) then
+                if ImGui.Button(("Save as new global preset"), ImGui.GetContentRegionAvail(), 0) then
                     SetGlobalPreset()
                 end
 
@@ -725,12 +722,12 @@ function BetterVehicleFirstPerson:New()
                     end
 
                     -- Save global preset
-                    if ImGui.Button((" Save global preset ")) then
+                    if ImGui.Button(("Save global preset")) then
                         SetGlobalPreset()
                     end
 
                     -- Reset global preset
-                    if ImGui.Button((" Load global preset ")) then
+                    if ImGui.Button(("Load global preset")) then
                         ApplyPreset(globalVehiclePreset)
                         RefreshCameraIfNeeded()
                     end
@@ -783,41 +780,38 @@ function BetterVehicleFirstPerson:New()
                     end
                 end
 
-                ImGui.SameLine()
                 -- Reset preset
                 if curVehiclePreset and not IsSamePreset(curVehiclePreset) then
-                    if ImGui.Button((" Load %s preset "):format(carName), buttonWidth, 0) then
+                    if ImGui.Button((" Load %s preset "):format(carName)) then
                         ApplyPreset(curVehiclePreset)
                         RefreshCameraIfNeeded()
                     end
                 end
-
-                local buttonWidth = (ImGui.GetWindowContentRegionWidth() * 0.2 - 2 * padding)
 
                 ImGui.Dummy(0, 4)
                 ImGui.Separator()
                 ImGui.Text("Individual Presets")
 
                 ImGui.PushStyleColor(ImGuiCol.ChildBg, ImGui.GetColorU32(0.65, 0.7, 1, 0.045))
-                ImGui.BeginChild("percarpresets", ImGui.GetContentRegionAvail(), -1)
+                ImGui.BeginChild("percarpresets", ImGui.GetContentRegionAvail(), 400)
 
                 local childPadding = 20 -- Define padding for left and right
                 ImGui.Dummy(0, 10) -- Add vertical padding at the top
                 -- Preset list
                 for i, pr in pairs(Config.data.perCarPresets) do
                     if pr.man ~= "global" then
-                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + childPadding)
                         local isSamePreset = IsSamePreset(pr.preset)
 
-                        -- Load/Check Button
+                        ImGui.SetCursorPosX(ImGui.GetCursorPosX() + childPadding)
+
+                        -- Load Preset Button
                         ImGui.PushID(tostring(i))
-                        ImGui.SetNextItemWidth(buttonWidth) -- Set fixed width for the button
                         if isSamePreset then
-                            ImGui.BeginDisabled()
-                            ImGui.Button(IconGlyphs.CheckBold, buttonWidth, 0) -- Replace "Load" with IconGlyphs.CheckBold
+                            ImGui.BeginDisabled(true)
+                            ImGui.Button(IconGlyphs.CheckBold, 120, 0) -- Show checkmark for loaded preset
                             ImGui.EndDisabled()
                         else
-                            if ImGui.Button(" Load ", buttonWidth, 0) then
+                            if ImGui.Button("Load", 120, 0) then -- Show upload glyph for other presets
                                 ApplyPreset(pr.preset)
                                 RefreshCameraIfNeeded()
                             end
@@ -849,15 +843,15 @@ function BetterVehicleFirstPerson:New()
                     end
                 end
                 ImGui.Dummy(0, 10) -- Add vertical padding at the bottom
-
                 ImGui.EndChild()
                 ImGui.PopStyleColor(1)
             end
         end
 
+        ImGui.PopStyleColor(2)
+        ImGui.PopStyleVar(1)
+
         ImGui.End()
---[[         ImGui.PopStyleVar(1)
-        ImGui.PopStyleColor(8) ]]
     end)
 
     return {
