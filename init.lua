@@ -890,7 +890,21 @@ function BetterVehicleFirstPerson:New()
                         if isSamePreset then
                             ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(0.0, 0.8, 0.5, 1))
                         end
-                        ImGui.Text(pr.man .. " " .. pr.model)
+                        local recordID = pr.man
+                        if recordID then
+                            local displayName = TweakDB:GetFlat(recordID .. ".displayName")
+                            local lockey = Game.GetLocalizedText(displayName)
+                            local withoutPrefix = string.gsub(lockey, "LocKey%(", "")
+                            local displayNums = string.match(withoutPrefix, "(%d+)")
+                            local nameStr = 'LocKey#' .. tostring(displayNums)
+                            if displayName then
+                                ImGui.Text(Game.GetLocalizedText(nameStr))
+                            else
+                                ImGui.Text(pr.man .. " " .. pr.model) -- Fallback if no display name is found
+                            end
+                        else
+                            ImGui.Text(pr.man .. " " .. pr.model) -- Fallback if no record ID is found
+                        end
                         if isSamePreset then
                             ImGui.PopStyleColor()
                         end
