@@ -552,16 +552,14 @@ function BetterVehicleFirstPerson:New()
         local guiFlags
 
         -- Set window size constraints
-        if enabled then
+        if enabled and isInVehicle then
             guiFlags = ImGuiWindowFlags.AlwaysUseWindowPadding
-            ImGui.SetNextWindowSizeConstraints(screenWidth * 0.15, screenWidth * 0.15, screenWidth / 100 * 50, screenHeight / 100 * 90)
+            ImGui.SetNextWindowSizeConstraints(screenWidth * 0.15, screenWidth * 0.165, screenWidth / 100 * 50, screenHeight / 100 * 90)
         else
             guiFlags = ImGuiWindowFlags.NoScrollbar + ImGuiWindowFlags.AlwaysAutoResize + ImGuiWindowFlags.AlwaysUseWindowPadding
             ImGui.SetNextWindowSizeConstraints(0, 0, screenWidth / 100 * 50, screenHeight / 100 * 90)
         end
-
         
-
         -- Set initial window position and size
         ImGui.SetNextWindowPos(200, 200, ImGuiCond.FirstUseEver)
         ImGui.SetNextWindowSize(250, 260, ImGuiCond.FirstUseEver)
