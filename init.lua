@@ -549,22 +549,46 @@ function BetterVehicleFirstPerson:New()
 
         local screenWidth, screenHeight = GetDisplayResolution()
 
+        local guiFlags
+
         -- Set window size constraints
-        ImGui.SetNextWindowSizeConstraints(screenWidth * 0.15, screenWidth * 0.15, screenWidth / 100 * 50, screenHeight / 100 * 90)
+        if enabled then
+            guiFlags = ImGuiWindowFlags.AlwaysUseWindowPadding
+            ImGui.SetNextWindowSizeConstraints(screenWidth * 0.15, screenWidth * 0.15, screenWidth / 100 * 50, screenHeight / 100 * 90)
+        else
+            guiFlags = ImGuiWindowFlags.NoScrollbar + ImGuiWindowFlags.AlwaysAutoResize + ImGuiWindowFlags.AlwaysUseWindowPadding
+            ImGui.SetNextWindowSizeConstraints(0, 0, screenWidth / 100 * 50, screenHeight / 100 * 90)
+        end
+
+        
 
         -- Set initial window position and size
         ImGui.SetNextWindowPos(200, 200, ImGuiCond.FirstUseEver)
         ImGui.SetNextWindowSize(250, 260, ImGuiCond.FirstUseEver)
 
-        ImGui.Begin("Better Vehicle First Person")
+        ImGui.Begin("Better Vehicle First Person", guiFlags)
         ImGui.SetWindowFontScale(1)
 
         -- toggle enabled / maintain FOV when using weapons
-        enabled, toggleEnabled = ImGui.Checkbox("Enabled", enabled)
-        maintainFOVEnabled, toggleMaintainFOVEnabled = ImGui.Checkbox("Maintain FOV when using weapons", maintainFOVEnabled)
-        if toggleEnabled then
+        if enabled then
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(0.0, 0.8, 0.5, 1)) -- Green for enabled
+            ImGui.PushStyleColor(ImGuiCol.Text, 0, 0, 0, 1.0)
+        else
+            ImGui.PushStyleColor(ImGuiCol.Button, ImGui.GetColorU32(0.5, 0.5, 0.5, 1.0)) -- Grey for disabled
+            ImGui.PushStyleColor(ImGuiCol.Text, 1.0, 1.0, 1.0, 0.5)
+        end
+
+        if ImGui.Button(enabled and "Enabled" or "Disabled", ImGui.GetContentRegionAvail(), 0) then
+            enabled = not enabled
             RefreshCameraIfNeeded()
         end
+
+        ImGui.PopStyleColor(2)
+
+        if enabled then
+            maintainFOVEnabled, toggleMaintainFOVEnabled = ImGui.Checkbox("Maintain FOV when using weapons", maintainFOVEnabled)
+        end
+        
         if toggleMaintainFOVEnabled then
             RefreshWeaponFOVIfNeeded()
         end
@@ -694,8 +718,9 @@ function BetterVehicleFirstPerson:New()
 
             -- Save global preset
             if not globalVehiclePreset then
-                ImGui.Text(" The global preset ")
-                ImGui.Text(" hasn't been established yet. ")
+                ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(0.5, 0.5, 0.5, 1.0))
+                ImGui.Text("No global preset currently saved.")
+                ImGui.PopStyleColor(1)
 
                 if ImGui.Button(("Save as new global preset"), ImGui.GetContentRegionAvail(), 0) then
                     SetGlobalPreset()
