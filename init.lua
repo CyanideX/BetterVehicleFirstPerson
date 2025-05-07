@@ -952,9 +952,13 @@ function BetterVehicleFirstPerson:New()
                     ImGui.PopID()
                     ImGui.SameLine()
 
-                    -- Preset Name
+                    -- Preset Name with Alert Icon
                     ImGui.PushStyleColor(ImGuiCol.Text, ImGui.GetColorU32(0.5, 0.5, 0.5, 1)) -- Grey text
+                    ImGui.Text(IconGlyphs.AlertCircle)
+                    ui.tooltip("This vehicle is missing from the game. It may have been uninstalled or is unavailable.", true)
+                    ImGui.SameLine()
                     ImGui.Text(pr.man .. " " .. pr.model) -- Fallback if no display name is found
+                    -- ui.tooltip("This vehicle is missing from the game. It may have been uninstalled or is unavailable.", true)
                     ImGui.PopStyleColor()
                 end
                 ImGui.Dummy(0, 10) -- Add vertical padding at the bottom
